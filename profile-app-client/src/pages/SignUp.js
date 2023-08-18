@@ -1,3 +1,4 @@
+import authService from '../context/auth.service';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -28,9 +29,8 @@ const SignUp = () => {
     };
 
     // console.log(requestBody);
-
-    axios
-      .post(`${API_URL}/auth/signup`, requestBody)
+    authService
+      .signup(requestBody)
       .then((response) => {
         navigate('/login');
         console.log(response);
@@ -44,7 +44,7 @@ const SignUp = () => {
   return (
     <div
       className="m-20 flex flex-row w-100"
-    //   style={{ backgroundImage: backgroundImg }}
+      //   style={{ backgroundImage: backgroundImg }}
     >
       <form
         onSubmit={handleSignUpSumit}

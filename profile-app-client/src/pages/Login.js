@@ -1,7 +1,9 @@
+import authService from '../context/auth.service';
 import { AuthContext } from '../context/auth.context';
 import { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
 const API_URL = 'http://localhost:5005';
 
 const Login = () => {
@@ -18,13 +20,14 @@ const Login = () => {
   const handleLogInSumit = (e) => {
     e.preventDefault();
     const requestBody = { email: email, password: password };
-    axios
-      .post(`${API_URL}/auth/login`, requestBody)
+    
+    authService
+      .login(requestBody)
       .then((response) => {
         console.log('JWT token', response.data.authToken);
         storeToken(response.data.authToken);
         authenticateUser();
-        navigate('/');
+        navigate('/profile');
       })
       .catch((err) => {
         const errorDescription = err.response.data.message;

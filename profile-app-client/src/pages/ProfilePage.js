@@ -1,74 +1,107 @@
+import authService from '../context/auth.service';
 import { AuthContext } from '../context/auth.context';
 import { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
 const API_URL = 'http://localhost:5005';
 
 const ProfilePage = () => {
-  const { user, storeToken } = useContext(AuthContext);
-
+  // const { storeToken } = useContext(AuthContext);
+  const { logOutUser, authenticateUser } = useContext(AuthContext);
+  const [errorMessage, setErrorMessage] = useState(undefined);
+  const [isLoading, setLoading] = useState(true);
   const [campus, setCampus] = useState('');
   const [course, setCourse] = useState('');
   const [email, setEmail] = useState('');
   const [uploadedFilePath, setUploadedFilePath] = useState('');
   const [image, setImage] = useState('');
-
-  const handleUploadedFile = (e) => {
-    setUploadedFilePath(e.target.files[0]);
-    console.log(uploadedFilePath);//put a simple timeout (react dev )
-  };
-
-//   useEffect(()=>{
-//     //execute the function of axio.get("user",{header}).tehe()
-//   });
-
-  //   const fetchedUser = axios
-  //     .get(`${API_URL}/api/user`, { user })
-  //     .then((response) => {
-  //       console.log(response.data);
-  //     })
-  //     .catch((err) => console.log(err));
-
-  const storedToken = localStorage.getItem('authToken');
-
-  const uploadNewPicture = (e) => {
-    e.preventDefault();
-
-    const formData = new FormData();
-    formData.append('imageUrl', uploadedFilePath);
-
-    axios
-      .post(`${API_URL}/api/upload`, formData)
-      .then((response) => {
-        console.log(response.data);
-        if (response.data.fileUrl) {
-          setImage(response.data.fileUrl);
-          axios
-            .put(
-              `${API_URL}/api/user`,
-              { image: response.data.fileUrl },
-              {
-                headers: {
-                  Authorization: `Bearer ${storedToken}`, // Set the token as an Authorization header
-                },
-              }
-            )
-            .then((response) => {
-              console.log(response.data);
-            })
-            .catch((err) => console.log(err));
-        }
-      })
-      .catch((err) => console.log(err));
-  };
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const token = localStorage.getItem('authToken');
 
   useEffect(() => {
-    if (user) {
-      setCampus(user.campus);
-      setCourse(user.course); // You had a typo here, 'user.couse' should be 'user.course'
-      setEmail(user.email);
-    }
-  }, [user]);
+    axios
+      .get(`${API_URL}/api/user`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        setUser(response.data);
+        setCampus(response.data.campus);
+        setCourse(response.data.course);
+        setEmail(response.data.email);
+        setImage(response.data.imageUrl);
+        setLoading(false); // Data is fetched, set loading to false
+        console.log(response.data);
+      })
+      .catch((err) => {
+        console.log(err);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleUploadedFile = (e) => {
+    setUploadedFilePath();
+    console.log(uploadedFilePath);
+
+    const formData = new FormData();
+    formData.append('imageUrl', e.target.files[0]);
+
+    authService
+      .fileUpload(formData)
+      .then((response) => {
+        if (response.data.fileUrl) {
+          setImage(response.data.fileUrl);
+        }
+      })
+      .catch((err) => {
+        const errorDescription = err.response.data.message;
+        setErrorMessage(errorDescription);
+      });
+
+    // axios.post(`${API_URL}/api/upload`, formData).then((response) => {
+    //   if (response.data.fileUrl) {
+    //     setImage(response.data.fileUrl);
+    //   }
+    // });
+  };
+
+  const updateNewPicture = (e) => {
+    e.preventDefault();
+
+    authService
+      .updatePicture({ image: image })
+      .then((response) => {
+        console.log(response.data);
+      })
+      .catch((err) => {
+        const errorDescription = err.response.data.message;
+        setErrorMessage(errorDescription);
+      });
+
+    // axios
+    //   .put(
+    //     `${API_URL}/api/user`,
+    //     { image: image },
+    //     {
+    //       headers: {
+    //         Authorization: `Bearer ${token}`, // Set the token as an Authorization header
+    //       },
+    //     }
+    //   )
+    //   .then((response) => {
+    //     console.log(response.data);
+    //   })
+    //   .catch((err) => console.log(err));
+  };
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    logOutUser();
+    navigate('/');
+  };
 
   return (
     <div>
@@ -83,7 +116,7 @@ const ProfilePage = () => {
           <h4>{course}</h4>
           <img src={image} alt="" />
           <form
-            onSubmit={uploadNewPicture}
+            onSubmit={updateNewPicture}
             className="m-20 flex flex-col w-100"
           >
             <label htmlFor="profileImage">Profile image</label>
@@ -93,6 +126,14 @@ const ProfilePage = () => {
               type="submit"
             >
               Submit
+            </button>
+          </form>
+          <form onSubmit={handleLogout}>
+            <button
+              className="rounded-none bg-gray-300 text-gray-700 py-2 mt-4 w-40"
+              type="submit"
+            >
+              Logout
             </button>
           </form>
         </div>

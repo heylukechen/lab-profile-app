@@ -1,3 +1,4 @@
+import authService from './auth.service';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -18,21 +19,35 @@ function AuthProviderWrapper(props) {
     const storedToken = localStorage.getItem('authToken');
     if (storedToken) {
       // We must send the JWT token in the request's "Authorization" Headers
-      axios
-        .get(`${API_URL}/auth/verify`, {
-          headers: { Authorization: `Bearer ${storedToken}` },
-        })
+      // axios
+      //   .get(`${API_URL}/auth/verify`, {
+      //     headers: { Authorization: `Bearer ${storedToken}` },
+      //   })
+      //   .then((response) => {
+      //     // If the server verifies that JWT token is valid  ✅
+      //     const user = response.data;
+      //     // Update state variables
+      //     setIsLoggedIn(true);
+      //     setIsLoading(false);
+      //     setUser(user);
+      //   })
+      //   .catch((error) => {
+      //     // If the server sends an error response (invalid token)
+      //     // Update state variables
+      //     setIsLoggedIn(false);
+      //     setIsLoading(false);
+      //     setUser(null);
+      //   });
+      
+      authService
+        .verify()
         .then((response) => {
-          // If the server verifies that JWT token is valid  ✅
           const user = response.data;
-          // Update state variables
-          setIsLoggedIn(true);
           setIsLoading(false);
+          setIsLoggedIn(true);
           setUser(user);
         })
-        .catch((error) => {
-          // If the server sends an error response (invalid token)
-          // Update state variables
+        .catch((err) => {
           setIsLoggedIn(false);
           setIsLoading(false);
           setUser(null);
@@ -50,10 +65,10 @@ function AuthProviderWrapper(props) {
     localStorage.removeItem('authToken');
   }
 
-//   const logInUser = (token) => {
-//     localStorage.setItem("authToken", token);
-//     authenticateUser();
-//   }
+  //   const logInUser = (token) => {
+  //     localStorage.setItem("authToken", token);
+  //     authenticateUser();
+  //   }
 
   function logOutUser() {
     removeToken();

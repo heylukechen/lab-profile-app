@@ -8,19 +8,28 @@ const { isAuthenticated } = require('../middleware/jwt.middleware');
 router.get('/user', isAuthenticated, (req, res, next) => {
   // const token =
   //   req.headers.authorization && req.headers.authorization.split(' ')[1];
+  // don't need to do this, since the middleware "isAuthenticated" has been handleded.
 
-  // if (!token) {
-  //   return res.status(401).json({ message: 'No token provided' });
-  // }
-  
-  try {
-    const decodedToken = req.payload;
-    const user = { _id: decodedToken._id, email: decodedToken.email };
-    res.json(user);
-  } catch (error) {
-    // If there's an error, it means the token is invalid or expired
-    return res.status(401).json({ message: 'Invalid or expired token' });
+  const decodedToken = req.payload;
+  const userId = decodedToken._id;
+
+  if (!decodedToken) {
+    return res.status(401).json({ message: 'No token provided' });
   }
+
+  User.findById(userId)
+    .then((foundUser) => {
+      console.log(foundUser);
+      const user = {
+        _id: foundUser._id,
+        email: foundUser.email,
+        course: foundUser.course,
+        campus: foundUser.campus,
+        imageUrl: foundUser.image,
+      };
+      res.json(user);
+    })
+    .catch((err) => console.log(err));
 });
 
 router.post('/upload', fileUploader.single('imageUrl'), (req, res, next) => {
@@ -36,6 +45,7 @@ router.put('/user', (req, res, next) => {
   if (!token) {
     return res.status(401).json({ message: 'No token provided' });
   }
+
   try {
     const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
     const userId = decodedToken._id;
